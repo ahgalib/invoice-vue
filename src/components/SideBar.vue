@@ -10,9 +10,11 @@ const props = defineProps({
     invoiceData : Object,
     depositRequest:Object,
     transaction : Array,
-    storeDueAmount: String
+    storeDueAmount: String,
+    
 
 })
+
 
 //let checkDepoAmount = ref(props.depositRequest)
 
@@ -22,6 +24,7 @@ const emit = defineEmits(['pass-payment','updatedDueAmount','passInvoiceTransact
 let editModal = ref(false)
 
 let paidAmount = ref(props.invoiceData.paid_amount)
+
 
 let invoiceDueAmount = ref(props.invoiceData.due_amount);
 const showModal = () => {
@@ -47,12 +50,6 @@ const openTransactionModal = async () => {
 }
 
 
-
-const getTotalPaidAmount = (totalPaidAmount) => {
-    console.log('sidebar page check total paid amount', totalPaidAmount)
-    paidAmount.value = totalPaidAmount;
-}
-
 let fetchData = ref(false);
 onMounted(() => {
     fetchData.value = true
@@ -60,6 +57,11 @@ onMounted(() => {
 
 const passTransactionDeleteId = (deleteId) => {
     emit('passInvoiceTransactionDeleteId',deleteId)
+   
+}
+
+const getUpdatedAmount = (updatedAmount) => {
+    paidAmount.value = updatedAmount;
 }
 
 const submitConf = () => {
@@ -94,13 +96,10 @@ const shouldShowEditModal = computed(() => {
             <table class="mb-2">
                 <tbody class="font-bold">
                     <tr>
-                        <div id="editDipositButton" v-if="depositRequest !== null && depositRequest.diposit_amount > 0">
+                        <div id="editDipositButton" v-if="depositRequest !== null && depositRequest.diposit_amount > 0.00 && invoiceData.total > paidAmount">
                            
                             <td class="text-dark dipositAmount py-2">
                                 <div>
-                                    <!-- Deposit Request (
-                                    <span><span></span><span>{{invoiceData.currency_symbol }} {{ depositRequest.diposit_amount < storeDueAmount ? depositRequest.diposit_amount :storeDueAmount }}</span><span></span></span>
-                                    ) -->
                                     Deposit Request (
                                     <span><span></span><span> {{ parseFloat(depositRequest.diposit_amount) < parseFloat(storeDueAmount) ? parseFloat(depositRequest.diposit_amount).toFixed(2) : parseFloat(storeDueAmount).toFixed(2) }}</span><span></span></span>
                                     )
@@ -115,9 +114,15 @@ const shouldShowEditModal = computed(() => {
 
                         <div id="addDipositButton" v-else>
                             <td class="request_deposit py-2">
+                                <!-- <a href="javascript:void(0)" id="ajaxDisabled" role="button"
+                                class="text-warning createDepositModalShow" :disabled = "invoiceData.total < paidAmount"  data-bs-toggle="modal"
+                                data-bs-target="#deposit-request">Request a deposit</a>                              -->
+
                                 <a href="javascript:void(0)" id="ajaxDisabled" role="button"
-                                class="text-warning createDepositModalShow" data-bs-toggle="modal"
-                                data-bs-target="#deposit-request">Request a deposit</a>                             
+                                    class="text-warning createDepositModalShow"
+                                    :disabled="invoiceData.total <= paidAmount"
+                                    v-bind:data-bs-toggle="invoiceData.total > paidAmount ? 'modal' : null"
+                                    v-bind:data-bs-target="invoiceData.total > paidAmount ? '#deposit-request' : null">Request a deposit</a>
                             </td>
                         </div>
                     </tr>
@@ -132,7 +137,7 @@ const shouldShowEditModal = computed(() => {
                     </tr>
 
 
-                    <tr v-if="invoiceData.due_amount > 0">
+                    <tr v-if="invoiceData.total > paidAmount">
                         <td class="text-dark py-2">
                             <a href="#" role="button"
                                 class="text-warning text-decoration-underline" data-bs-toggle="modal"
@@ -183,11 +188,11 @@ const shouldShowEditModal = computed(() => {
         </div> -->
         <DepositModal :invoiceData="invoiceData" :invoiceDueAmount="invoiceDueAmount" @create-deposit="depositRequestCheckWithAmount" :storeDueAmount="storeDueAmount"/>
 
-        <EditDepositModal :invoiceData="invoiceData" :depositRequest="depositRequest" v-show="shouldShowEditModal" :invoiceDueAmount="invoiceDueAmount" :storeDueAmount="storeDueAmount"/>
+        <EditDepositModal :invoiceData="invoiceData" :depositRequest="depositRequest" v-show="shouldShowEditModal" :invoiceDueAmount="invoiceDueAmount" :storeDueAmount="storeDueAmount" @create-deposit="depositRequestCheckWithAmount"/>
         
-        <TransactionModal :invoiceData="invoiceData" :transactionDataShow="transactionDataShow" :openTransactionModal = "openTransactionModal" @passDeleteId="passTransactionDeleteId" :transaction="transaction"/>
+        <TransactionModal :invoiceData="invoiceData" :transactionDataShow="transactionDataShow" :openTransactionModal = "openTransactionModal" @passDeleteId="passTransactionDeleteId" :transaction="transaction" @passUpdatedAmount="getUpdatedAmount"/>
 
-        <PaidModal :invoiceData="invoiceData"  @passTotalPaidAmount="getTotalPaidAmount" @paidFormSubmit="submitConf"/>
+        <PaidModal :invoiceData="invoiceData"  @paidFormSubmit="submitConf"/>
     </div>
 </div>
 </template>

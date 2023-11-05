@@ -133,7 +133,7 @@ emit('pass-updated-due-amount', totalDueAmount.value);
 									{{ depositRequest.diposit_amount < totalDueAmount ? depositRequest.diposit_amount : ''}}
 						</span> -->
 
-						<span v-if="depositRequest !== null && depositRequest.diposit_amount > 0">
+						<span v-if="depositRequest !== null && depositRequest.diposit_amount > 0 && totalDueAmount > 0">
 								Deposit Due | {{ depositRequest.due_date }} | {{ invoiceData.currency_symbol }}
 								{{ parseFloat(depositRequest.diposit_amount) < totalDueAmount ? parseFloat(depositRequest.diposit_amount).toFixed(2) : totalDueAmount }}
 						</span>

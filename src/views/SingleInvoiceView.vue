@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router';
 import MainSection from '../components/SingleInvoiceMainSection.vue';
 import SideBar from '../components/SideBar.vue'
-import {onMounted, ref, provide, watch, reactive} from 'vue'
+import {onMounted, ref, provide, watch, reactive,defineEmits} from 'vue'
 import axios from 'axios'
  
 import { toast } from 'vue3-toastify';
@@ -10,6 +10,8 @@ import 'vue3-toastify/dist/index.css';
 
 const route = useRoute();
 let id = route.params.uid
+
+
 
 let singleData = ref({});
 let invoiceData = ref({});
@@ -48,17 +50,18 @@ const deleteTransaction = async (id) => {
     })
    
 
-
     if(deleteData){
         toast.success("Transaction Deleted successfully", {
         autoClose: 3000,
         });
+
+        fetchDepositInfo()
        
     }
 
 }
 
-const fetchData2 = async () => {
+    const fetchData2 = async () => {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/transactions-list/' + id);
         state.tranData = response.data.data;
@@ -66,28 +69,27 @@ const fetchData2 = async () => {
       } catch (error) {
         console.error('Error fetching data:', error);
       }
+      //invoiceInfo()
+      const singelInvoice3 = await axios.get('http://127.0.0.1:8000/api/invoice/'+id);
+        singleData.value = singelInvoice3.data;
+        invoiceData.value = singleData.value.invoice;
+      console.log('invoice call after paid model is submit from  parent here', invoiceData.value)
+      
     };
 
     const fetchDepositInfo = async () => {
         try{
             const response = await axios.get('http://127.0.0.1:8000/api/invoice/deposit/show/' + id);
-        state.depositData = response.data.data;
+            state.depositData = response.data.data;
         }catch (error) {
-        console.error('Error fetching data:', error);
+            console.error('Error fetching data:', error);
       }
+      
     }
 
-
-
-watch(()=>{
-    fetchData2(),
-    fetchDepositInfo()
-})
-
-
-onMounted( async () => {
+const invoiceInfo = async() => {
     try{
-        fetchData2()
+        
 
         const singelInvoice = await axios.get('http://127.0.0.1:8000/api/invoice/'+id);
         singleData.value = singelInvoice.data;
@@ -104,6 +106,21 @@ onMounted( async () => {
     catch (error) {
     console.error('Error fetching data:', error)
   }
+}
+
+
+
+watch(()=>{
+    fetchData2()
+    fetchDepositInfo()
+    invoiceInfo()
+
+})
+
+
+onMounted( async () => {
+    fetchData2()
+    invoiceInfo()
 })
 
 

@@ -4,7 +4,7 @@
     <div class="modal-dialog modal-dialog-centered text-black" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Edit Request a deposit {{ invoiceData.paid_amount }}</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Edit Request a deposit</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">×</span>
                 </button>
@@ -35,7 +35,7 @@
                         <div class="form-group">
                             <label for="amount" class="col-form-label">Amount:</label>
                             <input type="number" class="form-control amount-field" min=0 step=".01" name="diposit_amount" 
-                            v-model="copydepositRequest.diposit_amount"
+                            v-model="currentDepositAmount"
                                 placeholder="Enter amount here"  v-on:keyup="calculatePercentage">
                         </div>
                     </div>
@@ -44,7 +44,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="amount" class="col-form-label">Due Date:</label>
-                            <input type="date" class="form-control dueDate" id="dueDate" name="due_date" v-model="copydepositRequest.due_date" data-id={{invoiceData.id}}>
+                            <input type="date" class="form-control dueDate" id="dueDate" name="due_date" v-model="currentDepositDueDate" data-id={{invoiceData.id}}>
                         </div>
                     </div>
 
@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import {ref, onMounted, defineEmits } from 'vue'
+import {ref, onMounted, defineEmits, watch, toRef } from 'vue'
 
 import axios from 'axios'
 
@@ -84,12 +84,32 @@ const props = defineProps({
     
 })
 
+let currentDepositAmount = ref();
+let currentDepositDueDate = ref();
+if(props.depositRequest != null){
+    currentDepositAmount.value = props.depositRequest.diposit_amount;
+    currentDepositDueDate.value = props.depositRequest.due_date;
+}
 
-const emit = defineEmits(['edit-deposit'])
-//let dueAmount = ref(props.invoiceData)
+//set initial deposit amount value
+watch(toRef(props, 'depositRequest'), (updatedDepoReq) => {
+    console.log('got changes depositRequest', updatedDepoReq);
+    currentDepositAmount.value = updatedDepoReq.diposit_amount
+    console.log('deposit amount should be this ', updatedDepoReq.diposit_amount)
+    calculatePercentage()
+});
+
+//set initial date value
+watch(toRef(props, 'depositRequest'),(updatedDueDate) => {
+    console.log('got changes depositDueDate', updatedDueDate);
+    currentDepositDueDate.value = updatedDueDate.due_date
+    console.log('deposit amount should be this ', updatedDueDate.due_date)
+})
+
+const emit = defineEmits(['edit-deposit','create-deposit'])
+
 let percentage = ref();
 let depositAmountRef = ref(props.depositRequest)
-
 
 
 
@@ -117,9 +137,10 @@ if(props.depositRequest != null){
 }
 
  function calculatePercentage() {
-    let totalAmount = props.invoiceData.due_amount;
+   
+    let totalAmount = dueAmount.value;
     //let depositAmount = copydepositRequest.value.diposit_amount;
-    let depositAmount = copydepositRequest.value.diposit_amount;
+    let depositAmount = currentDepositAmount.value;
 
   // Calculate percentage only if both totalAmount and paidAmount are numbers
     if (!isNaN(totalAmount) && !isNaN(depositAmount)) {
@@ -133,30 +154,35 @@ if(props.depositRequest != null){
         } 
     }
 
-    console.log(depositAmountRef.value)
 }
 
+
+
 function calculateAmount (){
-    //let percentage = ref();
+    
     let totalAmount = props.invoiceData.due_amount;
-    let depositAmount = copydepositRequest.value.diposit_amount;
+    //let depositAmount = copydepositRequest.value.diposit_amount;
+    let calculateDepositAmount = currentDepositAmount.value;
    
 
     if(percentage.value > 100){
         alert("Percentage should not bigger then 100");
-        copydepositRequest.value.diposit_amount = 0
+        calculateDepositAmount = 0
         percentage.value = 0;
     }else{
-        depositAmount = ((totalAmount * percentage.value) / 100).toFixed(2)
+        calculateDepositAmount = ((totalAmount * percentage.value) / 100).toFixed(2)
         //console.log(depositAmount)
-        copydepositRequest.value.diposit_amount = depositAmount;
+        currentDepositAmount.value = calculateDepositAmount;
+        
     }
 }
 
 const updateDeposit = async () => {
    
     let id = props.invoiceData.id;
-    let copyDeposit = copydepositRequest.value.diposit_amount;
+    //let copyDeposit = copydepositRequest.value.diposit_amount;
+    let copyDeposit = currentDepositAmount.value;
+
     props.depositRequest.diposit_amount = copyDeposit
     let date = copydepositRequest.value.due_date;
     props.depositRequest.due_date = date
@@ -167,7 +193,6 @@ const updateDeposit = async () => {
             'diposit_amount' : props.depositRequest.diposit_amount,
             'due_date' : props.depositRequest.due_date
         })
-                     
         success();
                
         
@@ -184,7 +209,6 @@ const updateDeposit = async () => {
 onMounted(()=>{
     calculatePercentage();
     calculateAmount()
-   
 })
 
 

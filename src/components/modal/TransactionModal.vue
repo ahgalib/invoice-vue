@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted } from 'vue';
-import {ref, defineEmits} from 'vue'
+import { onMounted, watch } from 'vue';
+import {ref, defineEmits, computed} from 'vue'
 import axios from 'axios'
 
 import { toast } from 'vue3-toastify';
@@ -15,7 +15,37 @@ const props = defineProps({
     transaction:Array,
 })
 
-const emit = defineEmits(['updatedDueAmount','passDeleteId'])
+const emit = defineEmits(['updatedDueAmount','passDeleteId','passUpdatedAmount'])
+
+const totalAmount = computed(() => { 
+    return props.transaction.reduce((total, transaction) => {
+        const paidAmount = parseFloat(transaction.paid_amount);
+
+        if (!isNaN(paidAmount)) {
+            // Parse total as float before performing arithmetic operations
+            total = parseFloat(total);
+            // Check if total is a valid number
+            if (!isNaN(total)) {
+                // Subtract paidAmount from total and round to 2 decimal places
+                return (total + paidAmount).toFixed(2);
+            }
+            // If total is not a valid number, return 0
+            return 0;
+        }
+
+        // If paidAmount is not a valid number, return total as is
+        return total;
+    }, 0);
+    
+});
+
+
+
+watch(totalAmount,(updatedAmount)=>{
+    emit('passUpdatedAmount',updatedAmount)
+})
+
+
 
 
 let fetchData = ref(false);
@@ -58,6 +88,10 @@ onMounted(() => {
                                 <td>{{ invoiceData.currency_symbol }} {{transactionData.paid_amount}}</td>
                                 <!-- <td><button class="btn btn-danger" @click="deleteTransaction(transactionData.id)">Delete</button></td> -->
                                 <td><button class="btn btn-danger" @click="$emit('passDeleteId',transactionData.id)">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <th>total</th>
+                                <th>{{ totalAmount }}</th>
                             </tr>
 
                         </tbody>

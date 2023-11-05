@@ -63,6 +63,7 @@ const addPayment = async () => {
 
             if(getPaidInfo){
                 emit('paidFormSubmit')
+                console.log(getPaidInfo)
             }
             
             totalPaidAmount.value = getPaidInfo.data.total_paid_amount;
